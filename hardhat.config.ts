@@ -86,6 +86,10 @@ const config: HardhatUserConfig = {
     outDir: "types",
     target: "ethers-v6",
   },
+  fhevm: {
+    // FHE configuration for local development
+    network: "sepolia",
+  },
 };
 
 export default config;

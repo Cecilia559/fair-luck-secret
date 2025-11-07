@@ -36,6 +36,7 @@ export interface FHERaffleInterface extends Interface {
       | "getRaffleCount"
       | "getRaffleMeta"
       | "hasEntered"
+      | "protocolId"
   ): FunctionFragment;
 
   getEvent(
@@ -89,6 +90,10 @@ export interface FHERaffleInterface extends Interface {
     functionFragment: "hasEntered",
     values: [BigNumberish, AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "protocolId",
+    values?: undefined
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "createRaffle",
@@ -121,6 +126,7 @@ export interface FHERaffleInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "hasEntered", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "protocolId", data: BytesLike): Result;
 }
 
 export namespace EntrySubmittedEvent {
@@ -324,6 +330,8 @@ export interface FHERaffle extends BaseContract {
     "view"
   >;
 
+  protocolId: TypedContractMethod<[], [bigint], "view">;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -419,6 +427,9 @@ export interface FHERaffle extends BaseContract {
     [boolean],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "protocolId"
+  ): TypedContractMethod<[], [bigint], "view">;
 
   getEvent(
     key: "EntrySubmitted"
