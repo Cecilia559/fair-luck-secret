@@ -12,7 +12,8 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import Header from "@/components/Header";
 import { useZamaInstance } from "@/hooks/useZamaInstance";
 import { useEthersSigner } from "@/hooks/useEthersSigner";
-import { CONTRACT_ADDRESS, getFHERaffleFactory } from "@/config/contracts";
+import { getFHERaffleFactory } from "@/config/contracts";
+import { getContractAddressByChainId } from "@/config/contractAddresses";
 
 export default function CreateRaffle() {
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ export default function CreateRaffle() {
   const { instance, isLoading: zamaLoading } = useZamaInstance();
   const signerPromise = useEthersSigner();
   const [loading, setLoading] = useState(false);
+  
+  // Get contract address for current chain
+  const contractAddress = getContractAddressByChainId(chainId);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,12 +47,9 @@ export default function CreateRaffle() {
       return;
     }
 
-    // Check network - allow both local (31337) and Sepolia (11155111)
-    const isLocalNetwork = chainId === 31337;
-    const isSepoliaNetwork = chainId === 11155111;
-    
-    if (!isLocalNetwork && !isSepoliaNetwork) {
-      toast.error(`Please switch to Hardhat local network (chainId: 31337) or Sepolia testnet (chainId: 11155111). Current chainId: ${chainId}`);
+    // Check if contract is deployed on current network
+    if (!contractAddress) {
+      toast.error(`Contract not deployed on current network (chainId: ${chainId}). Please switch to Hardhat local network (chainId: 31337) or Sepolia testnet (chainId: 11155111).`);
       return;
     }
 
@@ -92,7 +93,7 @@ export default function CreateRaffle() {
       const signer = await signerPromise;
       const Factory = await getFHERaffleFactory();
       const contract = new Contract(
-        CONTRACT_ADDRESS,
+        contractAddress,
         Factory.abi,
         signer
       );
@@ -100,9 +101,9 @@ export default function CreateRaffle() {
       // Verify contract exists at address
       const provider = signer.provider;
       if (provider) {
-        const code = await provider.getCode(CONTRACT_ADDRESS);
+        const code = await provider.getCode(contractAddress);
         if (code === '0x' || code === '0x0') {
-          toast.error(`Contract not found at address ${CONTRACT_ADDRESS}. Please deploy the contract first.`);
+          toast.error(`Contract not found at address ${contractAddress}. Please deploy the contract first.`);
           setLoading(false);
           return;
         }
@@ -116,7 +117,7 @@ export default function CreateRaffle() {
         maxEntries,
         duration,
         chainId,
-        contractAddress: CONTRACT_ADDRESS
+        contractAddress: contractAddress
       });
 
       // Estimate gas first to catch errors early (optional, skip if it fails)

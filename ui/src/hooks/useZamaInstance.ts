@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { createInstance, initSDK, SepoliaConfig } from '@zama-fhe/relayer-sdk/bundle';
 
+// Mock chains configuration for local development
+const MOCK_CHAINS: Record<number, string> = {
+  31337: 'http://localhost:8545', // Hardhat local network
+};
+
 export function useZamaInstance() {
   const [instance, setInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,19 +48,52 @@ export function useZamaInstance() {
         }
 
         console.log('Creating FHE instance...');
-        // Use window.ethereum as network provider to automatically use the connected network
-        const config = {
-          ...SepoliaConfig,
-          network: typeof window !== 'undefined' && (window as any).ethereum 
-            ? (window as any).ethereum 
-            : SepoliaConfig.network
-        };
         
-        const zamaInstance = await createInstance(config);
-        console.log('FHE instance created successfully');
-
-        if (mounted) {
-          setInstance(zamaInstance);
+        // Check if this is a mock chain (local development)
+        const isMockChain = chainId && MOCK_CHAINS[chainId];
+        
+        if (isMockChain) {
+          console.log('Local network detected, using mock FHE instance');
+          // For local networks, we'll still try to create an instance
+          // but it may not work fully without FHE support
+          // The contract operations should still work for non-FHE functions
+          const config = {
+            ...SepoliaConfig,
+            network: typeof window !== 'undefined' && (window as any).ethereum 
+              ? (window as any).ethereum 
+              : MOCK_CHAINS[chainId]
+          };
+          
+          try {
+            const zamaInstance = await createInstance(config);
+            console.log('FHE instance created successfully (mock mode)');
+            if (mounted) {
+              setInstance(zamaInstance);
+            }
+          } catch (mockError: any) {
+            console.warn('FHE instance creation failed in mock mode:', mockError);
+            // For local networks, we can continue without FHE instance
+            // as long as we're not using FHE operations
+            if (mounted) {
+              setInstance(null);
+              setError(null); // Don't show error for local network
+            }
+          }
+        } else {
+          // For Sepolia or other networks, use standard config
+          const config = {
+            ...SepoliaConfig,
+            network: typeof window !== 'undefined' && (window as any).ethereum 
+              ? (window as any).ethereum 
+              : SepoliaConfig.network
+          };
+          
+          const zamaInstance = await createInstance(config);
+          console.log('FHE instance created successfully');
+          
+          if (mounted) {
+            setInstance(zamaInstance);
+          }
         }
       } catch (err: any) {
         console.error('Failed to initialize Zama instance:', err);

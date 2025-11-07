@@ -1,5 +1,7 @@
-// Contract address will be set after deployment
-// For local development, update this after running: npx hardhat deploy --network hardhat
+import { getContractAddressByChainId } from './contractAddresses';
+
+// Legacy export for backward compatibility
+// Use getContractAddressByChainId() function instead
 export const CONTRACT_ADDRESS = 
   (import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`) || 
   ('0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`); // Default Hardhat local address
