@@ -135,22 +135,16 @@ export default function CreateRaffle() {
         // Continue without gas estimate - the transaction will use default gas
       }
 
-      // Send transaction with optional gas limit
-      // In Ethers.js v6, transaction options are passed as the last argument
-      const txOptions: { gasLimit?: bigint } = {};
-      if (gasEstimate) {
-        // Add 20% buffer to gas estimate
-        txOptions.gasLimit = gasEstimate + (gasEstimate / BigInt(5));
-      }
-
+      // Send transaction
+      // In Ethers.js v6, we can pass transaction options as overrides
+      // But for now, let's just call without options since gas estimation is failing
       const tx = await contract.createRaffle(
         formData.title,
         formData.description,
         prizeAmountWei,
         entryFeeWei,
         maxEntries,
-        duration,
-        txOptions.gasLimit ? txOptions : {}
+        duration
       );
 
       console.log('Transaction sent:', tx.hash);
