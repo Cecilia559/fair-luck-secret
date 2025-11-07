@@ -1,7 +1,7 @@
 // Contract configuration
 // ABI and addresses are imported from auto-generated files
 import { FHERaffleABI } from '../../abi/FHERaffleABI';
-import { getContractAddressByChainId } from './contractAddresses';
+import { FHERaffleAddresses } from '../../abi/FHERaffleAddresses';
 
 // Legacy export for backward compatibility
 export const CONTRACT_ADDRESS = 
@@ -22,5 +22,14 @@ export function getFHERaffleABI() {
  * @returns Contract address for the chain or undefined
  */
 export function getContractAddress(chainId: number | undefined): `0x${string}` | undefined {
-  return getContractAddressByChainId(chainId);
+  if (!chainId) {
+    return undefined;
+  }
+
+  const entry = FHERaffleAddresses[chainId.toString() as keyof typeof FHERaffleAddresses];
+  if (!entry || entry.address === "0x0000000000000000000000000000000000000000") {
+    return undefined;
+  }
+
+  return entry.address as `0x${string}`;
 }
