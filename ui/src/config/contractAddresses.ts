@@ -1,16 +1,10 @@
-// Contract addresses by chain ID
-// This file should be updated after deployment to each network
-export const FHERaffleAddresses: Record<string, { address: `0x${string}`; chainId: number; chainName: string }> = {
-  "31337": {
-    address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    chainId: 31337,
-    chainName: "hardhat",
-  },
-  "11155111": {
-    address: "0x0000000000000000000000000000000000000000", // Update after Sepolia deployment
-    chainId: 11155111,
-    chainName: "sepolia",
-  },
+/*
+  This file is auto-generated.
+  Command: 'npm run genabi'
+*/
+export const FHERaffleAddresses = { 
+  "11155111": { address: "0x0000000000000000000000000000000000000000", chainId: 11155111, chainName: "sepolia" },
+  "31337": { address: "0x5FbDB2315678afecb367f032d93F642f64180aa3", chainId: 31337, chainName: "hardhat" },
 };
 
 /**
@@ -25,11 +19,11 @@ export function getContractAddressByChainId(
     return undefined;
   }
 
-  const entry = FHERaffleAddresses[chainId.toString()];
+  const entry = FHERaffleAddresses[chainId.toString() as keyof typeof FHERaffleAddresses];
   if (!entry || entry.address === "0x0000000000000000000000000000000000000000") {
     return undefined;
   }
 
-  return entry.address;
+  return entry.address as `0x${string}`;
 }
 

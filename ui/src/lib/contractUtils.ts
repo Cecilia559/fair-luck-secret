@@ -1,16 +1,20 @@
 import { BrowserProvider, Contract } from 'ethers';
-import { CONTRACT_ADDRESS, getFHERaffleFactory } from '@/config/contracts';
+import { getFHERaffleABI, getContractAddress } from '@/config/contracts';
 
-export async function getRaffleMeta(raffleId: number): Promise<any> {
+export async function getRaffleMeta(raffleId: number, chainId?: number): Promise<any> {
   if (typeof window === 'undefined' || !window.ethereum) {
     throw new Error('No ethereum provider found');
   }
 
-  const Factory = await getFHERaffleFactory();
+  const contractAddress = chainId ? getContractAddress(chainId) : undefined;
+  if (!contractAddress) {
+    throw new Error('Contract not deployed on current network');
+  }
+
   const provider = new BrowserProvider(window.ethereum);
   const contract = new Contract(
-    CONTRACT_ADDRESS,
-    Factory.abi,
+    contractAddress,
+    getFHERaffleABI(),
     provider
   );
 
@@ -31,16 +35,20 @@ export async function getRaffleMeta(raffleId: number): Promise<any> {
   };
 }
 
-export async function getRaffleCount(): Promise<number> {
+export async function getRaffleCount(chainId?: number): Promise<number> {
   if (typeof window === 'undefined' || !window.ethereum) {
     return 0;
   }
 
-  const Factory = await getFHERaffleFactory();
+  const contractAddress = chainId ? getContractAddress(chainId) : undefined;
+  if (!contractAddress) {
+    return 0;
+  }
+
   const provider = new BrowserProvider(window.ethereum);
   const contract = new Contract(
-    CONTRACT_ADDRESS,
-    Factory.abi,
+    contractAddress,
+    getFHERaffleABI(),
     provider
   );
 

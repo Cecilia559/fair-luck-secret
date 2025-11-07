@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import RaffleCard from "./RaffleCard";
 import EntryModal from "./EntryModal";
 import { toast } from "sonner";
-import { CONTRACT_ADDRESS, getFHERaffleFactory } from "@/config/contracts";
+import { getFHERaffleABI, getContractAddress } from "@/config/contracts";
+import { useChainId } from "wagmi";
 
 interface RaffleMeta {
   creator: string;
@@ -18,6 +19,7 @@ interface RaffleMeta {
 }
 
 const RaffleBoard = () => {
+  const chainId = useChainId();
   const [selectedRaffle, setSelectedRaffle] = useState<any>(null);
   const [raffles, setRaffles] = useState<any[]>([]);
 
@@ -29,14 +31,16 @@ const RaffleBoard = () => {
     const fetchCount = async () => {
       try {
         const { getRaffleCount } = await import('@/lib/contractUtils');
-        const count = await getRaffleCount();
+        const count = await getRaffleCount(chainId);
         setRaffleCount(BigInt(count));
       } catch (error) {
         console.error('Error fetching raffle count:', error);
       }
     };
-    fetchCount();
-  }, []);
+    if (chainId) {
+      fetchCount();
+    }
+  }, [chainId]);
 
   const count = useMemo(() => {
     if (!raffleCount) return 0;
@@ -92,7 +96,7 @@ const RaffleBoard = () => {
   const fetchRaffleMeta = async (raffleId: number): Promise<RaffleMeta | null> => {
     try {
       const { getRaffleMeta } = await import('@/lib/contractUtils');
-      return await getRaffleMeta(raffleId);
+      return await getRaffleMeta(raffleId, chainId);
     } catch (error) {
       console.error(`Error fetching raffle ${raffleId}:`, error);
       return null;

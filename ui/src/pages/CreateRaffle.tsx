@@ -12,8 +12,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import Header from "@/components/Header";
 import { useZamaInstance } from "@/hooks/useZamaInstance";
 import { useEthersSigner } from "@/hooks/useEthersSigner";
-import { getFHERaffleFactory } from "@/config/contracts";
-import { getContractAddressByChainId } from "@/config/contractAddresses";
+import { getFHERaffleABI, getContractAddress } from "@/config/contracts";
 
 export default function CreateRaffle() {
   const navigate = useNavigate();
@@ -24,7 +23,7 @@ export default function CreateRaffle() {
   const [loading, setLoading] = useState(false);
   
   // Get contract address for current chain
-  const contractAddress = getContractAddressByChainId(chainId);
+  const contractAddress = getContractAddress(chainId);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -91,10 +90,9 @@ export default function CreateRaffle() {
 
       // Submit to contract (prize and entry fee are now public, not encrypted)
       const signer = await signerPromise;
-      const Factory = await getFHERaffleFactory();
       const contract = new Contract(
         contractAddress,
-        Factory.abi,
+        getFHERaffleABI(),
         signer
       );
 

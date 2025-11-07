@@ -15,7 +15,8 @@ import { useAccount } from "wagmi";
 import { Contract } from "ethers";
 import { useZamaInstance } from "@/hooks/useZamaInstance";
 import { useEthersSigner } from "@/hooks/useEthersSigner";
-import { CONTRACT_ADDRESS, getFHERaffleFactory } from "@/config/contracts";
+import { getFHERaffleABI, getContractAddress } from "@/config/contracts";
+import { useChainId } from "wagmi";
 
 interface EntryModalProps {
   isOpen: boolean;
@@ -25,11 +26,14 @@ interface EntryModalProps {
 
 const EntryModal = ({ isOpen, onClose, raffle }: EntryModalProps) => {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const { instance, isLoading: zamaLoading } = useZamaInstance();
   const signerPromise = useEthersSigner();
   const [entryAmount, setEntryAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  
+  const contractAddress = getContractAddress(chainId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,18 +54,23 @@ const EntryModal = ({ isOpen, onClose, raffle }: EntryModalProps) => {
       const entryAmountWei = parseFloat(entryAmount) * 1e18;
       const entryAmountScaled = Math.floor(entryAmountWei / 1e12);
 
+      if (!contractAddress) {
+        toast.error("Contract not deployed on current network");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Encrypt entry amount
       const encryptedAmount = await instance
-        .createEncryptedInput(CONTRACT_ADDRESS, address)
+        .createEncryptedInput(contractAddress, address)
         .add32(entryAmountScaled)
         .encrypt();
 
       // Submit to contract
       const signer = await signerPromise;
-      const Factory = await getFHERaffleFactory();
       const contract = new Contract(
-        CONTRACT_ADDRESS,
-        Factory.abi,
+        contractAddress,
+        getFHERaffleABI(),
         signer
       );
 
