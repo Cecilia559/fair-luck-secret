@@ -19,13 +19,15 @@ export async function getRaffleMeta(raffleId: number): Promise<any> {
     creator: meta[0],
     title: meta[1],
     description: meta[2],
-    maxEntries: meta[3],
-    currentEntries: meta[4],
-    expireAt: meta[5],
-    isActive: meta[6],
-    isDrawn: meta[7],
-    winner: meta[8],
-    createdAt: meta[9],
+    prizeAmount: meta[3],
+    entryFee: meta[4],
+    maxEntries: meta[5],
+    currentEntries: meta[6],
+    expireAt: meta[7],
+    isActive: meta[8],
+    isDrawn: meta[9],
+    winner: meta[10],
+    createdAt: meta[11],
   };
 }
 

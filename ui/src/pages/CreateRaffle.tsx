@@ -37,34 +37,18 @@ export default function CreateRaffle() {
       return;
     }
 
-    if (!instance || !signerPromise) {
-      toast.error("Encryption service not ready");
+    if (!signerPromise) {
+      toast.error("Wallet not ready");
       return;
     }
 
     setLoading(true);
 
     try {
-      const prizeAmountWei = parseFloat(formData.prizeAmount) * 1e18;
-      const entryFeeWei = parseFloat(formData.entryFee) * 1e18;
-      
-      // Scale down for euint32 (divide by 1e12 to fit in uint32 range)
-      const prizeAmountScaled = Math.floor(prizeAmountWei / 1e12);
-      const entryFeeScaled = Math.floor(entryFeeWei / 1e12);
+      const prizeAmountWei = BigInt(Math.floor(parseFloat(formData.prizeAmount) * 1e18));
+      const entryFeeWei = BigInt(Math.floor(parseFloat(formData.entryFee) * 1e18));
 
-      // Encrypt prize amount
-      const encryptedPrize = await instance
-        .createEncryptedInput(CONTRACT_ADDRESS, address)
-        .add32(prizeAmountScaled)
-        .encrypt();
-
-      // Encrypt entry fee
-      const encryptedEntryFee = await instance
-        .createEncryptedInput(CONTRACT_ADDRESS, address)
-        .add32(entryFeeScaled)
-        .encrypt();
-
-      // Submit to contract
+      // Submit to contract (prize and entry fee are now public, not encrypted)
       const signer = await signerPromise;
       const Factory = await getFHERaffleFactory();
       const contract = new Contract(
@@ -76,11 +60,10 @@ export default function CreateRaffle() {
       const tx = await contract.createRaffle(
         formData.title,
         formData.description,
-        encryptedPrize.handles[0],
-        encryptedEntryFee.handles[0],
+        prizeAmountWei,
+        entryFeeWei,
         parseInt(formData.maxEntries),
-        parseInt(formData.duration),
-        encryptedPrize.inputProof
+        parseInt(formData.duration)
       );
 
       await tx.wait();
@@ -226,9 +209,9 @@ export default function CreateRaffle() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={loading || zamaLoading}
+                disabled={loading}
               >
-                {zamaLoading ? "Initializing encryption..." : loading ? "Creating Raffle..." : "Create Raffle"}
+                {loading ? "Creating Raffle..." : "Create Raffle"}
               </Button>
             </form>
           </CardContent>

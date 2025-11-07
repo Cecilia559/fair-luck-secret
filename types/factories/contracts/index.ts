@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export { FHECounter__factory } from "./FHECounter__factory";
+export { FHERaffle__factory } from "./FHERaffle__factory";

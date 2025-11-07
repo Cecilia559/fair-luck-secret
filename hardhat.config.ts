@@ -78,6 +78,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 800,
       },
+      viaIR: true, // Enable IR-based code generation to avoid "Stack too deep" errors
       evmVersion: "cancun",
     },
   },

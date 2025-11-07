@@ -44,69 +44,47 @@ describe("FHERaffle", function () {
     ({ fheRaffleContract, fheRaffleContractAddress } = await deployFixture());
   });
 
-  it("should create a raffle with encrypted values", async function () {
-    const prizeAmount = 5 * 1e18; // 5 ETH in wei
-    const entryFee = 0.1 * 1e18; // 0.1 ETH in wei
+  it("should create a raffle with public prize and entry fee", async function () {
+    const prizeAmount = BigInt(5 * 1e18); // 5 ETH in wei
+    const entryFee = BigInt(0.1 * 1e18); // 0.1 ETH in wei
     const maxEntries = 10;
     const durationHours = 24;
-
-    // Encrypt prize amount
-    const encryptedPrize = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(prizeAmount / 1e12)) // Scale down for euint32
-      .encrypt();
-
-    // Encrypt entry fee
-    const encryptedEntryFee = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(entryFee / 1e12)) // Scale down for euint32
-      .encrypt();
 
     const tx = await fheRaffleContract
       .connect(signers.alice)
       .createRaffle(
         "Test Raffle",
         "A test raffle",
-        encryptedPrize.handles[0],
-        encryptedEntryFee.handles[0],
+        prizeAmount,
+        entryFee,
         maxEntries,
-        durationHours,
-        encryptedPrize.inputProof
+        durationHours
       );
     await tx.wait();
 
     const meta = await fheRaffleContract.getRaffleMeta(0);
-    expect(meta.title).to.eq("Test Raffle");
-    expect(meta.creator).to.eq(signers.alice.address);
-    expect(meta.maxEntries).to.eq(maxEntries);
-    expect(meta.isActive).to.eq(true);
+    expect(meta[0]).to.eq(signers.alice.address); // creator
+    expect(meta[1]).to.eq("Test Raffle"); // title
+    expect(meta[3]).to.eq(prizeAmount); // prizeAmount
+    expect(meta[4]).to.eq(entryFee); // entryFee
+    expect(meta[5]).to.eq(maxEntries); // maxEntries
+    expect(meta[8]).to.eq(true); // isActive (index 8, not 9)
   });
 
   it("should allow users to enter a raffle with encrypted amount", async function () {
     // First create a raffle
-    const prizeAmount = 5 * 1e18;
-    const entryFee = 0.1 * 1e18;
-
-    const encryptedPrize = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(prizeAmount / 1e12))
-      .encrypt();
-
-    const encryptedEntryFee = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(entryFee / 1e12))
-      .encrypt();
+    const prizeAmount = BigInt(5 * 1e18);
+    const entryFee = BigInt(0.1 * 1e18);
 
     await fheRaffleContract
       .connect(signers.alice)
       .createRaffle(
         "Test Raffle",
         "A test raffle",
-        encryptedPrize.handles[0],
-        encryptedEntryFee.handles[0],
+        prizeAmount,
+        entryFee,
         10,
-        24,
-        encryptedPrize.inputProof
+        24
       );
 
     // Bob enters the raffle
@@ -130,29 +108,18 @@ describe("FHERaffle", function () {
 
   it("should prevent duplicate entries", async function () {
     // Create raffle
-    const prizeAmount = 5 * 1e18;
-    const entryFee = 0.1 * 1e18;
-
-    const encryptedPrize = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(prizeAmount / 1e12))
-      .encrypt();
-
-    const encryptedEntryFee = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(entryFee / 1e12))
-      .encrypt();
+    const prizeAmount = BigInt(5 * 1e18);
+    const entryFee = BigInt(0.1 * 1e18);
 
     await fheRaffleContract
       .connect(signers.alice)
       .createRaffle(
         "Test Raffle",
         "A test raffle",
-        encryptedPrize.handles[0],
-        encryptedEntryFee.handles[0],
+        prizeAmount,
+        entryFee,
         10,
-        24,
-        encryptedPrize.inputProof
+        24
       );
 
     // Bob enters first time
@@ -176,29 +143,18 @@ describe("FHERaffle", function () {
 
   it("should allow creator to draw winner after expiration", async function () {
     // Create raffle with short duration
-    const prizeAmount = 5 * 1e18;
-    const entryFee = 0.1 * 1e18;
-
-    const encryptedPrize = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(prizeAmount / 1e12))
-      .encrypt();
-
-    const encryptedEntryFee = await fhevm
-      .createEncryptedInput(fheRaffleContractAddress, signers.alice.address)
-      .add32(Math.floor(entryFee / 1e12))
-      .encrypt();
+    const prizeAmount = BigInt(5 * 1e18);
+    const entryFee = BigInt(0.1 * 1e18);
 
     await fheRaffleContract
       .connect(signers.alice)
       .createRaffle(
         "Test Raffle",
         "A test raffle",
-        encryptedPrize.handles[0],
-        encryptedEntryFee.handles[0],
+        prizeAmount,
+        entryFee,
         10,
-        1, // 1 hour duration
-        encryptedPrize.inputProof
+        1 // 1 hour duration
       );
 
     // Add entries

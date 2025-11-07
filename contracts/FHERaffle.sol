@@ -12,8 +12,8 @@ contract FHERaffle is SepoliaConfig {
         address creator;
         string title;
         string description;
-        euint32 prizeAmount; // Encrypted prize amount (in wei, scaled by 1e18)
-        euint32 entryFee; // Encrypted entry fee (in wei, scaled by 1e18)
+        uint256 prizeAmount; // Prize amount in wei (public)
+        uint256 entryFee; // Entry fee in wei (public)
         uint32 maxEntries;
         uint64 expireAt; // Unix timestamp
         uint32 currentEntries;
@@ -53,25 +53,22 @@ contract FHERaffle is SepoliaConfig {
     /// @notice Create a new raffle
     /// @param title The title of the raffle
     /// @param description The description of the raffle
-    /// @param encPrizeAmount Encrypted prize amount (external handle)
-    /// @param encEntryFee Encrypted entry fee (external handle)
+    /// @param prizeAmount Prize amount in wei (public)
+    /// @param entryFee Entry fee in wei (public)
     /// @param maxEntries Maximum number of entries allowed
     /// @param durationHours Duration in hours until raffle expires
-    /// @param inputProof The Zama input proof for encrypted values
     function createRaffle(
         string calldata title,
         string calldata description,
-        externalEuint32 encPrizeAmount,
-        externalEuint32 encEntryFee,
+        uint256 prizeAmount,
+        uint256 entryFee,
         uint32 maxEntries,
-        uint32 durationHours,
-        bytes calldata inputProof
+        uint32 durationHours
     ) external {
         require(maxEntries >= 2, "Max entries must be at least 2");
         require(durationHours > 0, "Duration must be positive");
-
-        euint32 prizeAmount = FHE.fromExternal(encPrizeAmount, inputProof);
-        euint32 entryFee = FHE.fromExternal(encEntryFee, inputProof);
+        require(prizeAmount > 0, "Prize amount must be positive");
+        require(entryFee > 0, "Entry fee must be positive");
 
         Raffle memory raffle;
         raffle.creator = msg.sender;
@@ -89,12 +86,6 @@ contract FHERaffle is SepoliaConfig {
         uint256 raffleId = _raffles.length;
         _raffles.push(raffle);
 
-        // ACL: allow contract and creator to access encrypted values
-        FHE.allowThis(_raffles[raffleId].prizeAmount);
-        FHE.allow(_raffles[raffleId].prizeAmount, msg.sender);
-        FHE.allowThis(_raffles[raffleId].entryFee);
-        FHE.allow(_raffles[raffleId].entryFee, msg.sender);
-
         emit RaffleCreated(raffleId, msg.sender, title, raffle.createdAt);
     }
 
@@ -102,6 +93,7 @@ contract FHERaffle is SepoliaConfig {
     /// @param raffleId The ID of the raffle to enter
     /// @param encAmount Encrypted entry amount (external handle)
     /// @param inputProof The Zama input proof for encrypted amount
+    /// @dev The encrypted entry amount must be >= the public entry fee
     function enterRaffle(
         uint256 raffleId,
         externalEuint32 encAmount,
@@ -115,6 +107,9 @@ contract FHERaffle is SepoliaConfig {
         require(!_hasEntered[raffleId][msg.sender], "Already entered");
 
         euint32 amount = FHE.fromExternal(encAmount, inputProof);
+        
+        // Note: Entry amount validation (>= entryFee) can be done off-chain before submission
+        // or during the draw process using FHE comparison operations
 
         Entry memory entry;
         entry.participant = msg.sender;
@@ -143,6 +138,8 @@ contract FHERaffle is SepoliaConfig {
     /// @return creator Creator address
     /// @return title Title string
     /// @return description Description string
+    /// @return prizeAmount Prize amount in wei
+    /// @return entryFee Entry fee in wei
     /// @return maxEntries Maximum entries allowed
     /// @return currentEntries Current number of entries
     /// @return expireAt Expiration timestamp
@@ -157,6 +154,8 @@ contract FHERaffle is SepoliaConfig {
             address creator,
             string memory title,
             string memory description,
+            uint256 prizeAmount,
+            uint256 entryFee,
             uint32 maxEntries,
             uint32 currentEntries,
             uint64 expireAt,
@@ -172,6 +171,8 @@ contract FHERaffle is SepoliaConfig {
             raffle.creator,
             raffle.title,
             raffle.description,
+            raffle.prizeAmount,
+            raffle.entryFee,
             raffle.maxEntries,
             raffle.currentEntries,
             raffle.expireAt,
@@ -182,25 +183,25 @@ contract FHERaffle is SepoliaConfig {
         );
     }
 
-    /// @notice Get encrypted prize amount for a raffle
+    /// @notice Get prize amount for a raffle (public)
     /// @param raffleId The ID of the raffle
-    /// @return encPrizeAmount Encrypted prize amount
-    function getEncryptedPrizeAmount(uint256 raffleId)
+    /// @return prizeAmount Prize amount in wei
+    function getPrizeAmount(uint256 raffleId)
         external
         view
-        returns (euint32 encPrizeAmount)
+        returns (uint256 prizeAmount)
     {
         require(raffleId < _raffles.length, "Invalid raffle ID");
         return _raffles[raffleId].prizeAmount;
     }
 
-    /// @notice Get encrypted entry fee for a raffle
+    /// @notice Get entry fee for a raffle (public)
     /// @param raffleId The ID of the raffle
-    /// @return encEntryFee Encrypted entry fee
-    function getEncryptedEntryFee(uint256 raffleId)
+    /// @return entryFee Entry fee in wei
+    function getEntryFee(uint256 raffleId)
         external
         view
-        returns (euint32 encEntryFee)
+        returns (uint256 entryFee)
     {
         require(raffleId < _raffles.length, "Invalid raffle ID");
         return _raffles[raffleId].entryFee;
@@ -245,11 +246,11 @@ contract FHERaffle is SepoliaConfig {
     /// @notice Check if an address has entered a raffle
     /// @param raffleId The ID of the raffle
     /// @param participant The address to check
-    /// @return hasEntered Whether the address has entered
+    /// @return Whether the address has entered
     function hasEntered(uint256 raffleId, address participant)
         external
         view
-        returns (bool hasEntered)
+        returns (bool)
     {
         require(raffleId < _raffles.length, "Invalid raffle ID");
         return _hasEntered[raffleId][participant];
