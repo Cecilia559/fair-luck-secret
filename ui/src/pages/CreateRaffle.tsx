@@ -146,9 +146,8 @@ export default function CreateRaffle() {
       }
 
       // Send transaction
-      // In Ethers.js v6, we can pass transaction options as overrides
-      // But for now, let's just call without options since gas estimation is failing
-      const tx = await contract.createRaffle(
+      // Use sendTransaction with populated transaction to have more control
+      const populatedTx = await contract.createRaffle.populateTransaction(
         formData.title,
         formData.description,
         prizeAmountWei,
@@ -156,6 +155,11 @@ export default function CreateRaffle() {
         maxEntries,
         duration
       );
+      
+      console.log('Populated transaction:', populatedTx);
+      
+      // Send the transaction
+      const tx = await signer.sendTransaction(populatedTx);
 
       console.log('Transaction sent:', tx.hash);
       toast.info(`Transaction sent: ${tx.hash.substring(0, 10)}...`);
